@@ -1,12 +1,48 @@
 import numpy as np
 import pandas as pd
 
+# 数据读取
 def read_txt(file_path):
     data = pd.read_table(file_path, header=None, delim_whitespace=True)
-    return data
+    labels = data.loc[:, data.shape[1] - 1]
+    data = data.loc[:, :data.shape[1] - 2]
+    return data, labels
 
-train = read_txt("C:/Song-Code/MLiAData/Ch05/HorseColicTraining.txt")
-test = read_txt("C:/Song-Code/MLiAData/Ch05/HorseColicTest.txt")
+def sigmoid(x):
+    return 1.0 / (1 + np.exp(-x))
+
+def classify(x, paras):
+    y = sigmoid(sum(x * paras))
+    if y > 0.5:
+        return 1
+    else:
+        return 0
+
+def SGD(data, labels, iter):
+    m, n = data.shape
+    paras = np.ones(n)
+    data_shuffled = data.sample(frac=1).reset_index(drop=True)
+    for i in range(iter):
+        # print("i=", i)
+        for j in range(m):
+            # print("j=", j)
+            learn_rate = 4 / (1.0 + i + j) + 0.0001
+            h = sigmoid(data_shuffled.loc[j,:] * paras)
+            error = labels[j] -  h
+            paras = paras - learn_rate * data_shuffled.loc[j,:] * error
+    return paras
+
+def error_rate(test, paras,labels):
+    error_num = 0
+    for i in range(test.shape[0]):
+        if (classify(test.loc[i,:], paras) != labels[i]):
+            error_num += 1
+    return float(error_num/test.shape[0])
+
+train, train_labels = read_txt("C:/Song-Code/MLiAData/Ch05/HorseColicTraining.txt")
+test, test_labels = read_txt("C:/Song-Code/MLiAData/Ch05/HorseColicTest.txt")
+paras = SGD(train, train_labels, 100)
+print(error_rate(test, paras,test_labels))
 
 # def colic_test():
 #     train_data_set = open('D:\DataSet\HorseColicTraining.txt')
